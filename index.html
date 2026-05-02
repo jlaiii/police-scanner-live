@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Police Scanner Live — Public Safety Radio</title>
+    <title>Scanner Live — Public Safety Radio Intelligence</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -26,6 +26,7 @@
             --green: #22c55e;
             --green-dim: rgba(34, 197, 94, 0.1);
             --orange: #f97316;
+            --orange-dim: rgba(249, 115, 22, 0.1);
             --font: 'Inter', system-ui, sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
         }
@@ -64,8 +65,8 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            letter-spacing: -0.02em;
         }
-        .sidebar-header h1 span { font-size: 1.5rem; }
         .sidebar-header p {
             font-size: 0.8rem;
             color: var(--text-muted);
@@ -176,11 +177,15 @@
         .feed-icon {
             width: 40px; height: 40px; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem; flex-shrink: 0;
+            font-size: 0.85rem; flex-shrink: 0;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: white;
         }
-        .feed-icon.police { background: rgba(239, 68, 68, 0.15); }
-        .feed-icon.fire { background: rgba(249, 115, 22, 0.15); }
-        .feed-icon.ems { background: rgba(34, 197, 94, 0.15); }
+        .feed-icon.police { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .feed-icon.fire { background: rgba(249, 115, 22, 0.2); color: #f97316; }
+        .feed-icon.ems { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .feed-icon.dispatch { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
         .feed-info { flex: 1; min-width: 0; }
         .feed-name { font-weight: 600; font-size: 0.88rem; }
         .feed-meta {
@@ -238,7 +243,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+            font-weight: 700;
             transition: all 0.2s;
         }
         .audio-btn:hover { transform: scale(1.1); }
@@ -260,7 +266,6 @@
             cursor: pointer;
         }
 
-        /* MAIN */
         .main { flex: 1; position: relative; }
         #map { width: 100%; height: 100%; background: #0d1117; }
 
@@ -305,7 +310,8 @@
         }
         .info-header h2 {
             font-size: 1.1rem; font-weight: 700;
-            display: flex; align-items: center; gap: 10px;
+            display: flex; align-items: center;
+            gap: 8px;
         }
         .info-close {
             background: none; border: none; color: var(--text-muted);
@@ -326,14 +332,18 @@
             border-radius: 10px; color: white;
             font-weight: 600; cursor: pointer;
             margin-top: 12px; transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.8rem;
         }
-        .play-btn:hover { transform: translateY(-2px); }
+        .play-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
 
         .leaflet-popup-content-wrapper {
             background: var(--surface) !important;
             border: 1px solid var(--border) !important;
             border-radius: 12px !important;
             color: var(--text) !important;
+            font-family: var(--font) !important;
         }
         .leaflet-popup-tip { background: var(--surface) !important; border: 1px solid var(--border) !important; }
 
@@ -354,22 +364,22 @@
     <div class="app">
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h1><span>🚨</span> Police Scanner Live</h1>
-                <p>Live public safety radio feeds</p>
+                <h1>Scanner Live</h1>
+                <p>Public safety radio intelligence</p>
                 <div class="live-badge"><div class="pulse"></div> Live Audio Feed</div>
             </div>
 
             <div class="search-box">
-                <span class="search-icon">🔍</span>
+                <span class="search-icon">&#128269;</span>
                 <input type="text" id="feed-search" placeholder="Search feeds by city, state..." oninput="filterFeeds()">
             </div>
 
             <div class="filters" id="filters">
                 <button class="filter-chip active" data-filter="all" onclick="setFilter('all')">All</button>
-                <button class="filter-chip" data-filter="police" onclick="setFilter('police')">🚔 Police</button>
-                <button class="filter-chip" data-filter="fire" onclick="setFilter('fire')">🔥 Fire</button>
-                <button class="filter-chip" data-filter="ems" onclick="setFilter('ems')">🚑 EMS</button>
-                <button class="filter-chip" data-filter="dispatch" onclick="setFilter('dispatch')">📡 Dispatch</button>
+                <button class="filter-chip" data-filter="police" onclick="setFilter('police')">Police</button>
+                <button class="filter-chip" data-filter="fire" onclick="setFilter('fire')">Fire</button>
+                <button class="filter-chip" data-filter="ems" onclick="setFilter('ems')">EMS</button>
+                <button class="filter-chip" data-filter="dispatch" onclick="setFilter('dispatch')">Dispatch</button>
             </div>
 
             <div class="feed-list" id="feed-list"></div>
@@ -378,26 +388,26 @@
                 <div class="now-playing-label">Now Playing</div>
                 <div class="now-playing-title" id="np-title">--</div>
                 <div class="audio-controls">
-                    <button class="audio-btn stop" onclick="stopAudio()">⏹</button>
+                    <button class="audio-btn stop" onclick="stopAudio()">STOP</button>
                     <input type="range" class="volume-slider" min="0" max="100" value="80" oninput="setVolume(this.value)">
                 </div>
             </div>
         </div>
 
-        <button class="sidebar-toggle" id="toggle-btn" onclick="toggleSidebar()">☰</button>
+        <button class="sidebar-toggle" id="toggle-btn" onclick="toggleSidebar()">&#9776;</button>
 
         <div class="main">
             <div id="map"></div>
 
             <div class="top-bar">
-                <button class="top-btn active" id="btn-map" onclick="setLayer('map')">🗺️ Map</button>
-                <button class="top-btn" id="btn-sat" onclick="setLayer('satellite')">🛰️ Satellite</button>
+                <button class="top-btn active" id="btn-map" onclick="setLayer('map')">Map</button>
+                <button class="top-btn" id="btn-sat" onclick="setLayer('satellite')">Satellite</button>
             </div>
 
             <div class="info-panel" id="info-panel">
                 <div class="info-header">
                     <h2 id="info-title">Feed Info</h2>
-                    <button class="info-close" onclick="closeInfo()">✕</button>
+                    <button class="info-close" onclick="closeInfo()">&#10005;</button>
                 </div>
                 <div class="info-body" id="info-body"></div>
             </div>
@@ -407,86 +417,84 @@
     <audio id="audio-player" preload="none"></audio>
 
     <script>
-        // ===== SCANNER FEEDS DATA =====
         const feeds = [
-            { id: 'new-haven', name: 'Greater New Haven Police', type: 'police', icon: '🚔', color: '#ef4444',
+            { id: 'new-haven', name: 'Greater New Haven Police', type: 'police', icon: 'PD', color: '#ef4444',
               agency: 'New Haven PD', location: 'Connecticut', state: 'CT',
               lat: 41.3258, lon: -72.9361,
               url: 'https://broadcastify.cdnstream1.com/8705',
               status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'jefferson-ny', name: 'Jefferson County Police/Fire/EMS', type: 'dispatch', icon: '📡', color: '#f97316',
+            { id: 'jefferson-ny', name: 'Jefferson County Police/Fire/EMS', type: 'dispatch', icon: 'DC', color: '#3b82f6',
               agency: 'Jefferson County', location: 'Watertown, NY', state: 'NY',
               lat: 44.0323, lon: -75.8826,
               url: 'https://broadcastify.cdnstream1.com/6007',
               status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'madison-in', name: 'Madison County Sheriff/Fire/EMS', type: 'dispatch', icon: '📡', color: '#f97316',
+            { id: 'madison-in', name: 'Madison County Sheriff/Fire/EMS', type: 'dispatch', icon: 'DC', color: '#3b82f6',
               agency: 'Madison County', location: 'Anderson, IN', state: 'IN',
               lat: 40.0541, lon: -85.6604,
               url: 'https://broadcastify.cdnstream1.com/24550',
               status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'pittsburgh', name: 'Pittsburgh Police/Fire/EMS', type: 'dispatch', icon: '📡', color: '#f97316',
+            { id: 'pittsburgh', name: 'Pittsburgh Police/Fire/EMS', type: 'dispatch', icon: 'DC', color: '#3b82f6',
               agency: 'Pittsburgh Public Safety', location: 'Pittsburgh, PA', state: 'PA',
               lat: 40.4742, lon: -79.9103,
               url: 'https://broadcastify.cdnstream1.com/21738',
               status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'rivercom', name: 'Rivercom Chelan/Douglas Dispatch', type: 'dispatch', icon: '📡', color: '#f97316',
+            { id: 'rivercom', name: 'Rivercom Chelan/Douglas Dispatch', type: 'dispatch', icon: 'DC', color: '#3b82f6',
               agency: 'Rivercom', location: 'Wenatchee, WA', state: 'WA',
               lat: 47.4453, lon: -120.3113,
               url: 'https://broadcastify.cdnstream1.com/24557',
               status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'somafm-sf', name: 'SomaFM SF Police Scanner', type: 'police', icon: '🚔', color: '#ef4444',
+            { id: 'somafm-sf', name: 'San Francisco Police Scanner', type: 'police', icon: 'PD', color: '#ef4444',
               agency: 'San Francisco PD', location: 'San Francisco, CA', state: 'CA',
               lat: 37.8098, lon: -121.2863,
               url: 'https://ice6.somafm.com/scanner-128-mp3',
               status: 'online', bitrate: '128 kbps', format: 'MP3' },
-            { id: 'tillamook', name: 'Tillamook County Police/EMS', type: 'ems', icon: '🚑', color: '#22c55e',
+            { id: 'tillamook', name: 'Tillamook County Police/EMS', type: 'ems', icon: 'EMS', color: '#22c55e',
               agency: 'Tillamook County', location: 'Tillamook, OR', state: 'OR',
               lat: 45.4596, lon: -123.8365,
               url: 'https://broadcastify.cdnstream1.com/16984',
               status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'tucson', name: 'Tucson Police Dispatch', type: 'police', icon: '🚔', color: '#ef4444',
+            { id: 'tucson', name: 'Tucson Police Dispatch', type: 'police', icon: 'PD', color: '#ef4444',
               agency: 'Tucson PD', location: 'Tucson, AZ', state: 'AZ',
               lat: 32.2220, lon: -110.9743,
               url: 'https://broadcastify.cdnstream1.com/22835',
               status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'fairfax', name: 'Fairfax County Police/Fire/EMS', type: 'dispatch', icon: '📡', color: '#f97316',
+            { id: 'fairfax', name: 'Fairfax County Police/Fire/EMS', type: 'dispatch', icon: 'DC', color: '#3b82f6',
               agency: 'Fairfax County', location: 'Fairfax, VA', state: 'VA',
               lat: 38.8462, lon: -77.3064,
               url: 'https://broadcastify.cdnstream1.com/28326',
               status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'east-rutherford', name: 'East Rutherford Police/Fire', type: 'fire', icon: '🔥', color: '#f97316',
+            { id: 'east-rutherford', name: 'East Rutherford Police/Fire', type: 'fire', icon: 'FD', color: '#f97316',
               agency: 'East Rutherford FD', location: 'East Rutherford, NJ', state: 'NJ',
               lat: 40.8265, lon: -74.0970,
               url: 'https://broadcastify.cdnstream1.com/19129',
               status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'pittsburgh-fire', name: 'Pittsburgh Fire Dispatch', type: 'fire', icon: '🔥', color: '#f97316',
+            { id: 'pittsburgh-fire', name: 'Pittsburgh Fire Dispatch', type: 'fire', icon: 'FD', color: '#f97316',
               agency: 'Pittsburgh FD', location: 'Pittsburgh, PA', state: 'PA',
               lat: 40.4406, lon: -79.9959,
               url: 'https://broadcastify.cdnstream1.com/15309',
               status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'phoenix', name: 'Phoenix Metro Fire', type: 'fire', icon: '🔥', color: '#f97316',
+            { id: 'phoenix', name: 'Phoenix Metro Fire', type: 'fire', icon: 'FD', color: '#f97316',
               agency: 'Phoenix FD', location: 'Phoenix, AZ', state: 'AZ',
               lat: 33.4484, lon: -112.0740,
               url: 'https://broadcastify.cdnstream1.com/1',
               status: 'online', bitrate: '32 kbps', format: 'MP3' },
-            { id: 'bay-county', name: 'Bay County Scanner', type: 'dispatch', icon: '📡', color: '#f97316',
+            { id: 'bay-county', name: 'Bay County Scanner', type: 'dispatch', icon: 'DC', color: '#3b82f6',
               agency: 'Bay County', location: 'Panama City, FL', state: 'FL',
               lat: 30.1588, lon: -85.6602,
               url: 'http://feeds.baycountyscanner.org:8010/scanner',
               status: 'online', bitrate: '56 kbps', format: 'MP3' },
-            { id: 'colton', name: 'Colton Police Scanner', type: 'police', icon: '🚔', color: '#ef4444',
+            { id: 'colton', name: 'Colton Police Scanner', type: 'police', icon: 'PD', color: '#ef4444',
               agency: 'Colton PD', location: 'Colton, UT', state: 'UT',
               lat: 40.2505, lon: -112.2855,
               url: 'http://64.77.247.181:50/stream',
               status: 'online', bitrate: '56 kbps', format: 'MP3' },
-            { id: 'perth-fire', name: 'Perth Fire & Rescue', type: 'fire', icon: '🔥', color: '#f97316',
+            { id: 'perth-fire', name: 'Perth Fire and Rescue', type: 'fire', icon: 'FD', color: '#f97316',
               agency: 'Perth FR', location: 'Perth, Australia', state: 'WA',
               lat: -31.9505, lon: 115.8605,
               url: 'https://stream.warsug.info/WARSUG',
               status: 'online', bitrate: '24 kbps', format: 'MP3' }
         ];
 
-        // ===== MAP =====
         const map = L.map('map', {
             center: [39.8283, -98.5795], zoom: 4,
             zoomControl: false, attributionControl: false
@@ -496,10 +504,9 @@
         }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // ===== STATE =====
-        let markers = {}, currentFilter = 'all', activeFeed = null, audioPlayer = document.getElementById('audio-player');
+        let markers = {}, currentFilter = 'all', activeFeed = null;
+        let audioPlayer = document.getElementById('audio-player');
 
-        // ===== MARKERS =====
         function initMarkers() {
             feeds.forEach(feed => {
                 const marker = L.circleMarker([feed.lat, feed.lon], {
@@ -508,12 +515,12 @@
                 }).addTo(map);
 
                 marker.bindPopup(`
-                    <div style="min-width:200px">
-                        <h3 style="margin:0 0 6px;font-size:1rem">${feed.icon} ${feed.name}</h3>
+                    <div style="min-width:200px;font-family:'Inter',sans-serif">
+                        <h3 style="margin:0 0 6px;font-size:1rem;font-weight:700">${feed.name}</h3>
                         <p style="margin:0 0 4px;font-size:0.8rem;color:#9ca3af">${feed.agency}</p>
                         <p style="margin:0 0 4px;font-size:0.8rem;color:#6b7280">${feed.location}</p>
-                        <p style="margin:0;font-size:0.8rem">Status: <span style="color:#22c55e">ONLINE</span></p>
-                        <p style="margin:8px 0 0;font-size:0.8rem"><a href="#" onclick="playFeed('${feed.id}');return false;" style="color:#ef4444;font-weight:600">▶ Play Audio</a></p>
+                        <p style="margin:0;font-size:0.8rem">Status: <span style="color:#22c55e;font-weight:600">ONLINE</span></p>
+                        <p style="margin:8px 0 0;font-size:0.8rem"><a href="#" onclick="playFeed('${feed.id}');return false;" style="color:#ef4444;font-weight:600;text-decoration:none">PLAY AUDIO →</a></p>
                     </div>
                 `, { offset: [0, -10] });
 
@@ -522,7 +529,6 @@
             });
         }
 
-        // ===== SIDEBAR LIST =====
         function renderFeeds() {
             const list = document.getElementById('feed-list');
             const search = document.getElementById('feed-search').value.toLowerCase();
@@ -542,7 +548,7 @@
                 groups[f.type].push(f);
             });
 
-            const labels = { police: '🚔 Police', fire: '🔥 Fire & Rescue', ems: '🚑 EMS', dispatch: '📡 Dispatch Centers' };
+            const labels = { police: 'Police', fire: 'Fire & Rescue', ems: 'EMS', dispatch: 'Dispatch Centers' };
 
             Object.entries(groups).forEach(([type, items]) => {
                 const label = document.createElement('div');
@@ -556,10 +562,10 @@
                     item.onclick = () => { map.setView([feed.lat, feed.lon], 6); playFeed(feed.id); };
 
                     item.innerHTML = `
-                        <div class="feed-icon ${feed.type}" style="background:${feed.color}20">${feed.icon}</div>
+                        <div class="feed-icon ${feed.type}" style="background:${feed.color}20;color:${feed.color}">${feed.icon}</div>
                         <div class="feed-info">
                             <div class="feed-name">${feed.name}</div>
-                            <div class="feed-meta">${feed.location} · ${feed.bitrate}</div>
+                            <div class="feed-meta">${feed.location} / ${feed.bitrate}</div>
                         </div>
                         <div class="feed-status ${activeFeed === feed.id ? 'playing' : 'online'}">${activeFeed === feed.id ? 'PLAYING' : 'ONLINE'}</div>
                     `;
@@ -575,12 +581,10 @@
             renderFeeds();
         }
 
-        // ===== AUDIO PLAYER =====
         function playFeed(id) {
             const feed = feeds.find(f => f.id === id);
             if (!feed) return;
 
-            // Stop current
             if (activeFeed && activeFeed !== id) {
                 audioPlayer.pause();
                 audioPlayer.src = '';
@@ -591,12 +595,9 @@
             audioPlayer.volume = 0.8;
             audioPlayer.play().catch(e => console.log('Audio play failed:', e));
 
-            // Update UI
             document.getElementById('now-playing').style.display = 'block';
             document.getElementById('np-title').textContent = feed.name;
             renderFeeds();
-
-            // Show info
             showFeedInfo(id);
         }
 
@@ -612,13 +613,12 @@
             audioPlayer.volume = val / 100;
         }
 
-        // ===== INFO PANEL =====
         function showFeedInfo(id) {
             const feed = feeds.find(f => f.id === id);
             if (!feed) return;
 
             document.getElementById('info-panel').classList.add('visible');
-            document.getElementById('info-title').innerHTML = `${feed.icon} ${feed.name}`;
+            document.getElementById('info-title').innerHTML = `${feed.name}`;
             document.getElementById('info-body').innerHTML = `
                 <div class="info-row"><span class="info-label">Agency</span><span class="info-value">${feed.agency}</span></div>
                 <div class="info-row"><span class="info-label">Location</span><span class="info-value">${feed.location}</span></div>
@@ -628,7 +628,7 @@
                 <div class="info-row"><span class="info-label">Bitrate</span><span class="info-value">${feed.bitrate}</span></div>
                 <div class="info-row"><span class="info-label">Format</span><span class="info-value">${feed.format}</span></div>
                 <div class="info-row"><span class="info-label">Status</span><span class="info-value" style="color:var(--green)">ONLINE</span></div>
-                <button class="play-btn" onclick="playFeed('${feed.id}')">${activeFeed === feed.id ? '🔊 Now Playing' : '▶ Play Live Audio'}</button>
+                <button class="play-btn" onclick="playFeed('${feed.id}')">${activeFeed === feed.id ? 'Now Playing' : 'Play Live Audio'}</button>
             `;
         }
 
@@ -636,7 +636,6 @@
             document.getElementById('info-panel').classList.remove('visible');
         }
 
-        // ===== SIDEBAR TOGGLE =====
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const btn = document.getElementById('toggle-btn');
@@ -654,7 +653,6 @@
             btn.classList.toggle('collapsed');
         }
 
-        // ===== LAYERS =====
         function setLayer(layer) {
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`btn-${layer}`).classList.add('active');
@@ -672,7 +670,6 @@
             }
         }
 
-        // ===== MOBILE =====
         function handleResize() {
             if (window.innerWidth <= 768) {
                 document.getElementById('sidebar').classList.add('mobile-hidden');
@@ -698,7 +695,6 @@
             }
         });
 
-        // ===== INIT =====
         initMarkers();
         renderFeeds();
         handleResize();
