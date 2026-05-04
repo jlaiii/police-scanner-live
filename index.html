@@ -43,7 +43,7 @@ button.control-btn:hover{transform:translateY(-1px);opacity:0.9}
 .play-btn{background:#4361ee;color:#fff}
 .stop-btn{background:#ff4757;color:#fff}
 .volume-slider{width:100px}
-filters{display:flex;gap:0.4rem;margin-top:0.5rem;flex-wrap:wrap}
+#filters{display:flex;gap:0.4rem;margin-top:0.5rem;flex-wrap:wrap}
 .filter-tag{cursor:pointer;font-size:0.7rem;padding:0.3rem 0.6rem;border-radius:6px;background:#0f0f23;border:1px solid #16213e;color:#a0aec0;transition:all 0.2s}
 .filter-tag:hover,.filter-tag.active{background:#2d3561;border-color:#4cc9f0;color:#fff}
 .info-panel{position:absolute;top:10px;right:10px;width:280px;background:rgba(26,26,46,0.95);border:1px solid #16213e;border-radius:10px;padding:1rem;z-index:1000;max-height:60vh;overflow-y:auto;backdrop-filter:blur(8px)}
@@ -60,13 +60,13 @@ filters{display:flex;gap:0.4rem;margin-top:0.5rem;flex-wrap:wrap}
 <div class="panel-header">
 <h2>📡 Live Feeds</h2>
 <input id="search" placeholder="Search city, state, or type...">
-<div class="filters" id="filters"></div>
+<div id="filters"></div>
 </div>
 <div class="feeds-list" id="feedsList"></div>
 </div>
 <div class="map-container">
 <div id="map"></div>
-<div class="info-panel" id="infoPanel"><h3>Select a feed</h3><p>Click any feed in the list or a map marker to start listening.</p></div>
+<div class="info-panel" id="infoPanel"><h3>Select a feed</h3><p>Click any feed or a map marker to start listening.</p></div>
 </div>
 </div>
 <div class="player-bar" id="playerBar">
@@ -84,7 +84,6 @@ filters{display:flex;gap:0.4rem;margin-top:0.5rem;flex-wrap:wrap}
 </div>
 </div>
 <script>
-
 const feeds = [
   {id:'nyc-pd',name:'NYPD Citywide 1',location:'New York, NY',url:'https://broadcastify.cdnstream1.com/36956',lat:40.7128,lon:-74.006,type:'police',status:'online',listeners:0},
   {id:'buffalo',name:'Buffalo Police/Fire/EMS',location:'Buffalo, NY',url:'https://broadcastify.cdnstream1.com/26933',lat:42.8864,lon:-78.8784,type:'dispatch',status:'online',listeners:0},
@@ -187,13 +186,12 @@ const feeds = [
 const TYPES = {police:"#ff4757",fire:"#ff7f50",dispatch:"#4169e1",ems:"#2ed573",default:"#a29bfe"};
 let currentFeedId = null;
 let isPlaying = false;
-let audioCtx = null;
 const audioEl = document.createElement("audio");
 audioEl.crossOrigin = "anonymous";
 audioEl.preload = "none";
 document.body.appendChild(audioEl);
 
-const map = L.map("map").setView(""" + str([39.8283, -98.5795]) + """, 4);
+const map = L.map("map").setView([39.8283, -98.5795], 4);
 L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
   subdomains: "abcd", maxZoom: 19
@@ -277,7 +275,6 @@ function stopFeed(){
 
 function togglePlay(){
   if(!currentFeedId) return;
-  if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
   if(isPlaying){
     audioEl.pause();
     isPlaying = false;
@@ -329,7 +326,6 @@ function updateFilterTags(){
   }
 }
 
-// Build markers
 for(const f of feeds){
   const color = getColor(f.type);
   const m = L.circleMarker([f.lat, f.lon], {
@@ -351,11 +347,11 @@ buildFilters();
 renderFeeds();
 showInfo(feeds[0] ? feeds[0].id : null);
 
-// Clicking a marker updates info panel
 map.on("popupopen", e=>{
   const id = Object.keys(markers).find(k=>markers[k]===e.popup._source);
   if(id) showInfo(id);
 });
+
 </script>
 </body>
 </html>
