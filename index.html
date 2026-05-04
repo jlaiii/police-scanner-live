@@ -9,375 +9,90 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        :root {
-            --bg: #07070d;
-            --surface: #0f0f18;
-            --surface-hover: #16162a;
-            --border: #1e1e3e;
-            --border-active: #33334d;
-            --text: #e8e8f2;
-            --text-secondary: #9ca3af;
-            --text-muted: #6b7280;
-            --accent: #ef4444;
-            --accent-dim: rgba(239, 68, 68, 0.1);
-            --accent-glow: rgba(239, 68, 68, 0.3);
-            --blue: #3b82f6;
-            --blue-dim: rgba(59, 130, 246, 0.1);
-            --green: #22c55e;
-            --green-dim: rgba(34, 197, 94, 0.1);
-            --orange: #f97316;
-            --orange-dim: rgba(249, 115, 22, 0.1);
-            --font: 'Inter', system-ui, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: var(--font);
-            background: var(--bg);
-            color: var(--text);
-            overflow: hidden;
-            height: 100vh;
-        }
-
-        .app { display: flex; height: 100vh; width: 100vw; }
-
-        /* SIDEBAR */
-        .sidebar {
-            width: 380px;
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            z-index: 1000;
-            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .sidebar.hidden { transform: translateX(-100%); position: absolute; }
-        .sidebar.mobile-hidden { transform: translateX(-100%); }
-        .sidebar.mobile-visible { transform: translateX(0); position: fixed; height: 100vh; width: 85vw; max-width: 380px; }
-
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
-        }
-        .sidebar-header h1 {
-            font-size: 1.25rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            letter-spacing: -0.02em;
-        }
-        .sidebar-header p {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-        .live-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--green);
-            margin-top: 8px;
-            padding: 3px 10px;
-            border-radius: 20px;
-            background: var(--green-dim);
-            border: 1px solid rgba(34, 197, 94, 0.2);
-        }
-        .live-badge .pulse {
-            width: 6px; height: 6px; border-radius: 50%; background: var(--green);
-            animation: pulse-live 2s infinite;
-        }
-        @keyframes pulse-live {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
-        }
-
-        .search-box {
-            padding: 12px 20px;
-            border-bottom: 1px solid var(--border);
-            position: relative;
-        }
-        .search-box input {
-            width: 100%;
-            padding: 10px 14px 10px 38px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text);
-            font-size: 0.9rem;
-            outline: none;
-            font-family: var(--font);
-        }
-        .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
-        .search-box input::placeholder { color: var(--text-muted); }
-        .search-icon {
-            position: absolute; left: 32px; top: 50%; transform: translateY(-50%);
-            font-size: 0.9rem; color: var(--text-muted);
-        }
-
-        .filters {
-            display: flex;
-            gap: 6px;
-            padding: 10px 20px;
-            border-bottom: 1px solid var(--border);
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        .filters::-webkit-scrollbar { display: none; }
-        .filter-chip {
-            padding: 5px 14px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-        .filter-chip:hover { border-color: var(--border-active); color: var(--text); }
-        .filter-chip.active {
-            background: var(--accent-dim);
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .feed-list { flex: 1; overflow-y: auto; padding: 8px 12px; }
-        .feed-group-label {
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-muted);
-            padding: 12px 8px 6px;
-        }
-        .feed-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.15s;
-            margin-bottom: 2px;
-            border: 1px solid transparent;
-        }
-        .feed-item:hover { background: var(--surface-hover); border-color: var(--border); }
-        .feed-item.active {
-            background: var(--accent-dim);
-            border-color: var(--accent);
-        }
-        .feed-item.playing {
-            background: linear-gradient(135deg, var(--accent-dim), var(--blue-dim));
-            border-color: var(--accent);
-        }
-        .feed-icon {
-            width: 40px; height: 40px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.85rem; flex-shrink: 0;
-            font-weight: 700;
-            font-family: var(--font-mono);
-            color: white;
-        }
-        .feed-icon.police { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-        .feed-icon.fire { background: rgba(249, 115, 22, 0.2); color: #f97316; }
-        .feed-icon.ems { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-        .feed-icon.dispatch { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-        .feed-info { flex: 1; min-width: 0; }
-        .feed-name { font-weight: 600; font-size: 0.88rem; }
-        .feed-meta {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-        .feed-status {
-            font-size: 0.7rem;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 20px;
-            flex-shrink: 0;
-        }
-        .feed-status.online {
-            background: var(--green-dim);
-            color: var(--green);
-        }
-        .feed-status.playing {
-            background: var(--accent-dim);
-            color: var(--accent);
-            animation: pulse-live 2s infinite;
-        }
-
-        .now-playing {
-            padding: 16px 20px;
-            border-top: 1px solid var(--border);
-            background: linear-gradient(135deg, var(--accent-dim), transparent);
-        }
-        .now-playing-label {
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-        }
-        .now-playing-title {
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-        }
-        .audio-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .audio-btn {
-            width: 36px; height: 36px;
-            border-radius: 50%;
-            border: none;
-            background: var(--accent);
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: 700;
-            transition: all 0.2s;
-        }
-        .audio-btn:hover { transform: scale(1.1); }
-        .audio-btn.stop { background: var(--text-muted); }
-        .viz-container {
-            height: 70px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            margin-top: 10px;
-            padding: 5px 10px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            gap: 3px;
-            overflow: hidden;
-        }
-        .viz-bar {
-            width: 6px;
-            border-radius: 2px;
-            background: linear-gradient(180deg, var(--accent), var(--orange));
-            transition: height 0.05s ease-out;
-            min-height: 2px;
-            opacity: 0.85;
-        }
-        .volume-slider {
-            flex: 1;
-            -webkit-appearance: none;
-            appearance: none;
-            height: 4px;
-            background: var(--border);
-            border-radius: 2px;
-            outline: none;
-        }
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 14px; height: 14px;
-            border-radius: 50%;
-            background: var(--accent);
-            cursor: pointer;
-        }
-
-        .main { flex: 1; position: relative; }
-        #map { width: 100%; height: 100%; background: #0d1117; }
-
-        .sidebar-toggle {
-            position: absolute; left: 400px; top: 16px;
-            z-index: 1001; width: 40px; height: 40px;
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 10px; color: var(--text);
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; transition: left 0.25s;
-        }
-        .sidebar-toggle.collapsed { left: 16px; }
-
-        .top-bar {
-            position: absolute; top: 16px; right: 16px;
-            z-index: 500; display: flex; gap: 6px;
-        }
-        .top-btn {
-            padding: 8px 16px; background: var(--surface);
-            border: 1px solid var(--border); border-radius: 10px;
-            color: var(--text-secondary); font-size: 0.8rem;
-            font-weight: 600; cursor: pointer; transition: all 0.2s;
-        }
-        .top-btn:hover { border-color: var(--border-active); color: var(--text); }
-        .top-btn.active {
-            background: var(--accent-dim); border-color: var(--accent); color: var(--accent);
-        }
-
-        .info-panel {
-            position: absolute; bottom: 16px; right: 16px;
-            width: 360px; max-height: calc(100vh - 100px);
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 16px; overflow: hidden; z-index: 500;
-            backdrop-filter: blur(12px); display: none; flex-direction: column;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
-        .info-panel.visible { display: flex; }
-        .info-header {
-            padding: 20px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: start; justify-content: space-between;
-            background: linear-gradient(135deg, var(--accent-dim), transparent);
-        }
-        .info-header h2 {
-            font-size: 1.1rem; font-weight: 700;
-            display: flex; align-items: center;
-            gap: 8px;
-        }
-        .info-close {
-            background: none; border: none; color: var(--text-muted);
-            font-size: 1.2rem; cursor: pointer; padding: 0 0 0 12px;
-        }
-        .info-body { overflow-y: auto; padding: 16px 20px; }
-        .info-row {
-            display: flex; justify-content: space-between;
-            padding: 8px 0; border-bottom: 1px solid var(--border);
-            font-size: 0.85rem;
-        }
-        .info-row:last-child { border-bottom: none; }
-        .info-label { color: var(--text-muted); }
-        .info-value { font-weight: 600; font-family: var(--font-mono); }
-        .play-btn {
-            width: 100%; padding: 12px;
-            background: var(--accent); border: none;
-            border-radius: 10px; color: white;
-            font-weight: 600; cursor: pointer;
-            margin-top: 12px; transition: all 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-size: 0.8rem;
-        }
-        .play-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
-
-        .leaflet-popup-content-wrapper {
-            background: var(--surface) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: 12px !important;
-            color: var(--text) !important;
-            font-family: var(--font) !important;
-        }
-        .leaflet-popup-tip { background: var(--surface) !important; border: 1px solid var(--border) !important; }
-
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
-
-        @media (max-width: 768px) {
-            .sidebar { position: fixed; height: 100vh; width: 85vw; max-width: 380px; }
-            .sidebar-toggle { left: 16px !important; top: 16px; z-index: 1002; width: 44px; height: 44px; }
-            .top-bar { top: auto; bottom: 16px; right: 50%; transform: translateX(50%); flex-wrap: wrap; justify-content: center; }
-            .info-panel { width: calc(100% - 32px); left: 16px; right: 16px; bottom: 70px; max-height: 55vh; }
-        }
+:root{--bg:#07070d;--surface:#0f0f18;--surface-hover:#16162a;--border:#1e1e3e;--border-active:#33334d;--text:#e8e8f2;--text-secondary:#9ca3af;--text-muted:#6b7280;--accent:#ef4444;--accent-dim:rgba(239,68,68,.1);--accent-glow:rgba(239,68,68,.3);--blue:#3b82f6;--blue-dim:rgba(59,130,246,.1);--green:#22c55e;--green-dim:rgba(34,197,94,.1);--orange:#f97316;--orange-dim:rgba(249,115,22,.1);--font:'Inter',system-ui,sans-serif;--font-mono:'JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden;height:100vh}
+.app{display:flex;height:100vh;width:100vw}
+.sidebar{width:380px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1000;transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.sidebar.hidden{transform:translateX(-100%);position:absolute}
+.sidebar.mobile-hidden{transform:translateX(-100%)}
+.sidebar.mobile-visible{transform:translateX(0);position:fixed;height:100vh;width:85vw;max-width:380px}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border)}
+.sidebar-header h1{font-size:1.25rem;font-weight:800;display:flex;align-items:center;gap:10px;letter-spacing:-.02em}
+.sidebar-header p{font-size:.8rem;color:var(--text-muted);margin-top:4px}
+.live-badge{display:inline-flex;align-items:center;gap:6px;font-size:.7rem;font-weight:600;color:var(--green);margin-top:8px;padding:3px 10px;border-radius:20px;background:var(--green-dim);border:1px solid rgba(34,197,94,.2)}
+.live-badge .pulse{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse-live 2s infinite}
+@keyframes pulse-live{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.search-box{padding:12px 20px;border-bottom:1px solid var(--border);position:relative}
+.search-box input{width:100%;padding:10px 14px 10px 38px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.9rem;outline:none;font-family:var(--font)}
+.search-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.search-box input::placeholder{color:var(--text-muted)}
+.search-icon{position:absolute;left:32px;top:50%;transform:translateY(-50%);font-size:.9rem;color:var(--text-muted)}
+.filters{display:flex;gap:6px;padding:10px 20px;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filter-chip{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);font-size:.8rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:all .2s}
+.filter-chip:hover{border-color:var(--border-active);color:var(--text)}
+.filter-chip.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.feed-list{flex:1;overflow-y:auto;padding:8px 12px}
+.feed-group-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);padding:12px 8px 6px}
+.feed-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;cursor:pointer;transition:all .15s;margin-bottom:2px;border:1px solid transparent}
+.feed-item:hover{background:var(--surface-hover);border-color:var(--border)}
+.feed-item.active{background:var(--accent-dim);border-color:var(--accent)}
+.feed-item.playing{background:linear-gradient(135deg,var(--accent-dim),var(--blue-dim));border-color:var(--accent)}
+.feed-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;font-weight:700;font-family:var(--font-mono);color:white}
+.feed-icon.police{background:rgba(239,68,68,.2);color:#ef4444}
+.feed-icon.fire{background:rgba(249,115,22,.2);color:#f97316}
+.feed-icon.ems{background:rgba(34,197,94,.2);color:#22c55e}
+.feed-icon.dispatch{background:rgba(59,130,246,.2);color:#3b82f6}
+.feed-info{flex:1;min-width:0}
+.feed-name{font-weight:600;font-size:.88rem}
+.feed-meta{font-size:.75rem;color:var(--text-muted);margin-top:2px}
+.feed-status{font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:20px;flex-shrink:0}
+.feed-status.online{background:var(--green-dim);color:var(--green)}
+.feed-status.playing{background:var(--accent-dim);color:var(--accent);animation:pulse-live 2s infinite}
+.now-playing{padding:16px 20px;border-top:1px solid var(--border);background:linear-gradient(135deg,var(--accent-dim),transparent)}
+.now-playing-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px}
+.now-playing-title{font-weight:600;font-size:.9rem;margin-bottom:8px}
+.audio-controls{display:flex;align-items:center;gap:10px}
+.audio-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--accent);color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;transition:all .2s}
+.audio-btn:hover{transform:scale(1.1)}
+.audio-btn.stop{background:var(--text-muted)}
+.viz-container{height:70px;background:rgba(0,0,0,.3);border-radius:8px;margin-top:10px;padding:5px 10px;display:flex;align-items:flex-end;justify-content:center;gap:3px;overflow:hidden}
+.viz-bar{width:6px;border-radius:2px;background:linear-gradient(180deg,var(--accent),var(--orange));transition:height .05s ease-out;min-height:2px;opacity:.85}
+.volume-slider{flex:1;-webkit-appearance:none;appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none}
+.volume-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer}
+.main{flex:1;position:relative}
+#map{width:100%;height:100%;background:#0d1117}
+.sidebar-toggle{position:absolute;left:400px;top:16px;z-index:1001;width:40px;height:40px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:left .25s}
+.sidebar-toggle.collapsed{left:16px}
+.top-bar{position:absolute;top:16px;right:16px;z-index:500;display:flex;gap:6px}
+.top-btn{padding:8px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text-secondary);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
+.top-btn:hover{border-color:var(--border-active);color:var(--text)}
+.top-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.info-panel{position:absolute;bottom:16px;right:16px;width:360px;max-height:calc(100vh - 100px);background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;z-index:500;backdrop-filter:blur(12px);display:none;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.info-panel.visible{display:flex}
+.info-header{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:start;justify-content:space-between;background:linear-gradient(135deg,var(--accent-dim),transparent)}
+.info-header h2{font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.info-close{background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;padding:0 0 0 12px}
+.info-body{overflow-y:auto;padding:16px 20px}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.85rem}
+.info-row:last-child{border-bottom:none}
+.info-label{color:var(--text-muted)}
+.info-value{font-weight:600;font-family:var(--font-mono)}
+.play-btn{width:100%;padding:12px;background:var(--accent);border:none;border-radius:10px;color:white;font-weight:600;cursor:pointer;margin-top:12px;transition:all .2s;text-transform:uppercase;letter-spacing:.05em;font-size:.8rem}
+.play-btn:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.leaflet-popup-content-wrapper{background:var(--surface) !important;border:1px solid var(--border) !important;border-radius:12px !important;color:var(--text) !important;font-family:var(--font) !important}
+.leaflet-popup-tip{background:var(--surface) !important;border:1px solid var(--border) !important}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-active)}
+@media(max-width:768px){
+.sidebar{position:fixed;height:100vh;width:85vw;max-width:380px}
+.sidebar-toggle{left:16px !important;top:16px;z-index:1002;width:44px;height:44px}
+.top-bar{top:auto;bottom:16px;right:50%;transform:translateX(50%);flex-wrap:wrap;justify-content:center}
+.info-panel{width:calc(100% - 32px);left:16px;right:16px;bottom:70px;max-height:55vh}
+}
     </style>
 </head>
 <body>
@@ -386,14 +101,12 @@
             <div class="sidebar-header">
                 <h1>Scanner Live</h1>
                 <p>Public safety radio intelligence</p>
-                <div class="live-badge"><div class="pulse"></div> Live Audio Feed</div>
+                <div class="live-badge"><div class="pulse"></div> <span id="feed-count">0</span> Live Feeds</div>
             </div>
-
             <div class="search-box">
                 <span class="search-icon">&#128269;</span>
                 <input type="text" id="feed-search" placeholder="Search feeds by city, state..." oninput="filterFeeds()">
             </div>
-
             <div class="filters" id="filters">
                 <button class="filter-chip active" data-filter="all" onclick="setFilter('all')">All</button>
                 <button class="filter-chip" data-filter="police" onclick="setFilter('police')">Police</button>
@@ -401,32 +114,24 @@
                 <button class="filter-chip" data-filter="ems" onclick="setFilter('ems')">EMS</button>
                 <button class="filter-chip" data-filter="dispatch" onclick="setFilter('dispatch')">Dispatch</button>
             </div>
-
             <div class="feed-list" id="feed-list"></div>
-
             <div class="now-playing" id="now-playing" style="display:none">
                 <div class="now-playing-label">Now Playing</div>
                 <div class="now-playing-title" id="np-title">--</div>
-                <div class="viz-container" id="viz-container">
-                    <!-- Bars generated by JS -->
-                </div>
+                <div class="viz-container" id="viz-container"></div>
                 <div class="audio-controls">
                     <button class="audio-btn stop" onclick="stopAudio()">STOP</button>
                     <input type="range" class="volume-slider" min="0" max="100" value="80" oninput="setVolume(this.value)">
                 </div>
             </div>
         </div>
-
         <button class="sidebar-toggle" id="toggle-btn" onclick="toggleSidebar()">&#9776;</button>
-
         <div class="main">
             <div id="map"></div>
-
             <div class="top-bar">
                 <button class="top-btn active" id="btn-map" onclick="setLayer('map')">Map</button>
                 <button class="top-btn" id="btn-sat" onclick="setLayer('satellite')">Satellite</button>
             </div>
-
             <div class="info-panel" id="info-panel">
                 <div class="info-header">
                     <h2 id="info-title">Feed Info</h2>
@@ -436,372 +141,241 @@
             </div>
         </div>
     </div>
+    <audio id="audio-player" preload="none" crossorigin="anonymous"></audio>
 
-    <audio id="audio-player" preload="none"></audio>
-
-    <script>
-        const feeds = [
-            { id: 'new-haven', name: 'Greater New Haven Police', type: 'police', icon: 'PD', color: '#ef4444',
-              agency: 'New Haven PD', location: 'Connecticut', state: 'CT',
-              lat: 41.3258, lon: -72.9361,
-              url: 'https://broadcastify.cdnstream1.com/8705',
-              status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'jefferson-ny', name: 'Jefferson County Police/Fire/EMS', type: 'dispatch', icon: 'DC', color: '#3b82f6',
-              agency: 'Jefferson County', location: 'Watertown, NY', state: 'NY',
-              lat: 44.0323, lon: -75.8826,
-              url: 'https://broadcastify.cdnstream1.com/6007',
-              status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'madison-in', name: 'Madison County Sheriff/Fire/EMS', type: 'dispatch', icon: 'DC', color: '#3b82f6',
-              agency: 'Madison County', location: 'Anderson, IN', state: 'IN',
-              lat: 40.0541, lon: -85.6604,
-              url: 'https://broadcastify.cdnstream1.com/24550',
-              status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'pittsburgh', name: 'Pittsburgh Police/Fire/EMS', type: 'dispatch', icon: 'DC', color: '#3b82f6',
-              agency: 'Pittsburgh Public Safety', location: 'Pittsburgh, PA', state: 'PA',
-              lat: 40.4742, lon: -79.9103,
-              url: 'https://broadcastify.cdnstream1.com/21738',
-              status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'rivercom', name: 'Rivercom Chelan/Douglas Dispatch', type: 'dispatch', icon: 'DC', color: '#3b82f6',
-              agency: 'Rivercom', location: 'Wenatchee, WA', state: 'WA',
-              lat: 47.4453, lon: -120.3113,
-              url: 'https://broadcastify.cdnstream1.com/24557',
-              status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'somafm-sf', name: 'San Francisco Police Scanner', type: 'police', icon: 'PD', color: '#ef4444',
-              agency: 'San Francisco PD', location: 'San Francisco, CA', state: 'CA',
-              lat: 37.8098, lon: -121.2863,
-              url: 'https://ice6.somafm.com/scanner-128-mp3',
-              status: 'online', bitrate: '128 kbps', format: 'MP3' },
-            { id: 'tillamook', name: 'Tillamook County Police/EMS', type: 'ems', icon: 'EMS', color: '#22c55e',
-              agency: 'Tillamook County', location: 'Tillamook, OR', state: 'OR',
-              lat: 45.4596, lon: -123.8365,
-              url: 'https://broadcastify.cdnstream1.com/16984',
-              status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'tucson', name: 'Tucson Police Dispatch', type: 'police', icon: 'PD', color: '#ef4444',
-              agency: 'Tucson PD', location: 'Tucson, AZ', state: 'AZ',
-              lat: 32.2220, lon: -110.9743,
-              url: 'https://broadcastify.cdnstream1.com/22835',
-              status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'fairfax', name: 'Fairfax County Police/Fire/EMS', type: 'dispatch', icon: 'DC', color: '#3b82f6',
-              agency: 'Fairfax County', location: 'Fairfax, VA', state: 'VA',
-              lat: 38.8462, lon: -77.3064,
-              url: 'https://broadcastify.cdnstream1.com/28326',
-              status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'east-rutherford', name: 'East Rutherford Police/Fire', type: 'fire', icon: 'FD', color: '#f97316',
-              agency: 'East Rutherford FD', location: 'East Rutherford, NJ', state: 'NJ',
-              lat: 40.8265, lon: -74.0970,
-              url: 'https://broadcastify.cdnstream1.com/19129',
-              status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'pittsburgh-fire', name: 'Pittsburgh Fire Dispatch', type: 'fire', icon: 'FD', color: '#f97316',
-              agency: 'Pittsburgh FD', location: 'Pittsburgh, PA', state: 'PA',
-              lat: 40.4406, lon: -79.9959,
-              url: 'https://broadcastify.cdnstream1.com/15309',
-              status: 'online', bitrate: '16 kbps', format: 'MP3' },
-            { id: 'phoenix', name: 'Phoenix Metro Fire', type: 'fire', icon: 'FD', color: '#f97316',
-              agency: 'Phoenix FD', location: 'Phoenix, AZ', state: 'AZ',
-              lat: 33.4484, lon: -112.0740,
-              url: 'https://broadcastify.cdnstream1.com/1',
-              status: 'online', bitrate: '32 kbps', format: 'MP3' },
-            { id: 'bay-county', name: 'Bay County Scanner', type: 'dispatch', icon: 'DC', color: '#3b82f6',
-              agency: 'Bay County', location: 'Panama City, FL', state: 'FL',
-              lat: 30.1588, lon: -85.6602,
-              url: 'http://feeds.baycountyscanner.org:8010/scanner',
-              status: 'online', bitrate: '56 kbps', format: 'MP3' },
-            { id: 'colton', name: 'Colton Police Scanner', type: 'police', icon: 'PD', color: '#ef4444',
-              agency: 'Colton PD', location: 'Colton, UT', state: 'UT',
-              lat: 40.2505, lon: -112.2855,
-              url: 'http://64.77.247.181:50/stream',
-              status: 'online', bitrate: '56 kbps', format: 'MP3' },
-            { id: 'perth-fire', name: 'Perth Fire and Rescue', type: 'fire', icon: 'FD', color: '#f97316',
-              agency: 'Perth FR', location: 'Perth, Australia', state: 'WA',
-              lat: -31.9505, lon: 115.8605,
-              url: 'https://stream.warsug.info/WARSUG',
-              status: 'online', bitrate: '24 kbps', format: 'MP3' }
-        ];
-
-        const map = L.map('map', {
-            center: [39.8283, -98.5795], zoom: 4,
-            zoomControl: false, attributionControl: false
+    <script>const feeds=[
+{"id":"nyc-pd","name":"NYPD Citywide 1","type":"police","icon":"PD","color":"#ef4444","agency":"NYPD","location":"New York, NY","state":"NY","lat":40.7128,"lon":-74.0060,"url":"https://broadcastify.cdnstream1.com/36956","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"buffalo","name":"Buffalo Police/Fire/EMS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Buffalo Public Safety","location":"Buffalo, NY","state":"NY","lat":42.8864,"lon":-78.8784,"url":"https://broadcastify.cdnstream1.com/26933","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"rochester","name":"Rochester Police","type":"police","icon":"PD","color":"#ef4444","agency":"Rochester PD","location":"Rochester, NY","state":"NY","lat":43.1566,"lon":-77.6088,"url":"https://broadcastify.cdnstream1.com/6850","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"syracuse","name":"Onondaga County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Onondaga County","location":"Syracuse, NY","state":"NY","lat":43.0481,"lon":-76.1474,"url":"https://broadcastify.cdnstream1.com/41473","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"albany","name":"Albany Area Fire/EMS","type":"fire","icon":"FD","color":"#f97316","agency":"Albany FD","location":"Albany, NY","state":"NY","lat":42.6526,"lon":-73.7562,"url":"https://broadcastify.cdnstream1.com/1874","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"watertown","name":"Jefferson County Police/Fire/EMS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Jefferson County","location":"Watertown, NY","state":"NY","lat":44.0323,"lon":-75.8826,"url":"https://broadcastify.cdnstream1.com/6007","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"oswego","name":"Oswego County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Oswego County","location":"Oswego, NY","state":"NY","lat":43.4553,"lon":-76.5105,"url":"https://broadcastify.cdnstream1.com/41475","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"binghamton","name":"Chemung County Police/Fire","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Chemung County","location":"Elmira, NY","state":"NY","lat":42.0909,"lon":-76.8077,"url":"https://broadcastify.cdnstream1.com/41336","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"saratoga","name":"Washington/Warren/Saratoga Fire","type":"fire","icon":"FD","color":"#f97316","agency":"Multi-County FD","location":"Saratoga, NY","state":"NY","lat":43.0831,"lon":-73.7846,"url":"https://broadcastify.cdnstream1.com/1874","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"sf-soma","name":"San Francisco Police Scanner","type":"police","icon":"PD","color":"#ef4444","agency":"SFPD","location":"San Francisco, CA","state":"CA","lat":37.7749,"lon":-122.4194,"url":"https://ice6.somafm.com/scanner-128-mp3","status":"online","bitrate":"128 kbps","format":"MP3"},
+{"id":"lapd-valley","name":"LAPD Valley Bureau","type":"police","icon":"PD","color":"#ef4444","agency":"LAPD","location":"Los Angeles, CA","state":"CA","lat":34.2010,"lon":-118.4480,"url":"https://broadcastify.cdnstream1.com/26569","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"lapd-south","name":"LAPD South Bureau","type":"police","icon":"PD","color":"#ef4444","agency":"LAPD","location":"Los Angeles, CA","state":"CA","lat":33.9366,"lon":-118.2426,"url":"https://broadcastify.cdnstream1.com/20296","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"la-fire","name":"Los Angeles City Fire","type":"fire","icon":"FD","color":"#f97316","agency":"LAFD","location":"Los Angeles, CA","state":"CA","lat":34.0522,"lon":-118.2437,"url":"https://broadcastify.cdnstream1.com/2846","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"san-diego","name":"San Diego Police/Fire Dispatch","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"San Diego PS","location":"San Diego, CA","state":"CA","lat":32.7157,"lon":-117.1611,"url":"https://broadcastify.cdnstream1.com/20530","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"sacramento","name":"Sacramento County Sheriff","type":"police","icon":"PD","color":"#ef4444","agency":"Sacramento Sheriff","location":"Sacramento, CA","state":"CA","lat":38.5816,"lon":-121.4944,"url":"https://broadcastify.cdnstream1.com/5688","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"sac-south","name":"Sacramento Sheriff South","type":"police","icon":"PD","color":"#ef4444","agency":"Sacramento Sheriff","location":"Sacramento, CA","state":"CA","lat":38.4404,"lon":-121.3870,"url":"https://broadcastify.cdnstream1.com/23572","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"fresno","name":"Fresno Police/Fire/EMS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Fresno PS","location":"Fresno, CA","state":"CA","lat":36.7378,"lon":-119.7871,"url":"https://broadcastify.cdnstream1.com/13549","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"stockton","name":"Stockton Police/Fire","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Stockton PS","location":"Stockton, CA","state":"CA","lat":37.9577,"lon":-121.2908,"url":"https://broadcastify.cdnstream1.com/9340","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"vallejo","name":"Vallejo Police/Fire","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Vallejo PS","location":"Vallejo, CA","state":"CA","lat":38.1041,"lon":-122.2566,"url":"https://broadcastify.cdnstream1.com/820","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"kern","name":"Kern County Fire","type":"fire","icon":"FD","color":"#f97316","agency":"Kern County FD","location":"Bakersfield, CA","state":"CA","lat":35.3733,"lon":-119.0187,"url":"https://broadcastify.cdnstream1.com/40009","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"chicago-z8","name":"Chicago PD Zone 08","type":"police","icon":"PD","color":"#ef4444","agency":"Chicago PD","location":"Chicago, IL","state":"IL","lat":41.8781,"lon":-87.6298,"url":"https://broadcastify.cdnstream1.com/37361","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"chicago-z6","name":"Chicago PD Zone 06","type":"police","icon":"PD","color":"#ef4444","agency":"Chicago PD","location":"Chicago, IL","state":"IL","lat":41.8000,"lon":-87.6000,"url":"https://broadcastify.cdnstream1.com/37359","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"chicago-z10","name":"Chicago PD Zone 10","type":"police","icon":"PD","color":"#ef4444","agency":"Chicago PD","location":"Chicago, IL","state":"IL","lat":41.8500,"lon":-87.7000,"url":"https://broadcastify.cdnstream1.com/37363","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"chicago-z4","name":"Chicago PD Zone 04","type":"police","icon":"PD","color":"#ef4444","agency":"Chicago PD","location":"Chicago, IL","state":"IL","lat":41.9600,"lon":-87.6700,"url":"https://broadcastify.cdnstream1.com/37357","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"chicago-z1","name":"Chicago PD Zone 01","type":"police","icon":"PD","color":"#ef4444","agency":"Chicago PD","location":"Chicago, IL","state":"IL","lat":41.8800,"lon":-87.6200,"url":"https://broadcastify.cdnstream1.com/37354","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"peoria","name":"Peoria Police Prep","type":"police","icon":"PD","color":"#ef4444","agency":"Peoria PD","location":"Peoria, IL","state":"IL","lat":40.6936,"lon":-89.5890,"url":"https://broadcastify.cdnstream1.com/45090","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"springfield-il","name":"Sangamon County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Sangamon County","location":"Springfield, IL","state":"IL","lat":39.7817,"lon":-89.6501,"url":"https://broadcastify.cdnstream1.com/123","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"pekin-fire","name":"Pekin Area Fire Departments","type":"fire","icon":"FD","color":"#f97316","agency":"Pekin FD","location":"Pekin, IL","state":"IL","lat":40.5675,"lon":-89.6407,"url":"https://broadcastify.cdnstream1.com/44338","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"alton","name":"Alton Police/Fire/EMS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Alton PS","location":"Alton, IL","state":"IL","lat":38.8906,"lon":-90.1843,"url":"https://broadcastify.cdnstream1.com/19493","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"detroit","name":"Detroit Police Dispatch","type":"police","icon":"PD","color":"#ef4444","agency":"Detroit PD","location":"Detroit, MI","state":"MI","lat":42.3314,"lon":-83.0458,"url":"https://broadcastify.cdnstream1.com/13671","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"pittsburgh","name":"Pittsburgh Police/Fire/EMS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Pittsburgh PS","location":"Pittsburgh, PA","state":"PA","lat":40.4406,"lon":-79.9959,"url":"https://broadcastify.cdnstream1.com/21738","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"pittsburgh-fire","name":"Pittsburgh Fire Dispatch","type":"fire","icon":"FD","color":"#f97316","agency":"Pittsburgh FD","location":"Pittsburgh, PA","state":"PA","lat":40.4406,"lon":-79.9959,"url":"https://broadcastify.cdnstream1.com/15309","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"indianapolis","name":"Indianapolis Metro Police","type":"police","icon":"PD","color":"#ef4444","agency":"IMPD","location":"Indianapolis, IN","state":"IN","lat":39.7684,"lon":-86.1581,"url":"https://broadcastify.cdnstream1.com/32602","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"cincinnati","name":"Cincinnati Police","type":"police","icon":"PD","color":"#ef4444","agency":"Cincinnati PD","location":"Cincinnati, OH","state":"OH","lat":39.1031,"lon":-84.5120,"url":"https://broadcastify.cdnstream1.com/32619","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"cleveland","name":"Cleveland Police/MHA","type":"police","icon":"PD","color":"#ef4444","agency":"Cleveland PD","location":"Cleveland, OH","state":"OH","lat":41.4993,"lon":-81.6944,"url":"https://broadcastify.cdnstream1.com/11446","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"toledo","name":"Toledo Police Central","type":"police","icon":"PD","color":"#ef4444","agency":"Toledo PD","location":"Toledo, OH","state":"OH","lat":41.6528,"lon":-83.5379,"url":"https://broadcastify.cdnstream1.com/32252","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"allen-county","name":"Allen County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Allen County","location":"Fort Wayne, IN","state":"IN","lat":41.0793,"lon":-85.1394,"url":"https://broadcastify.cdnstream1.com/188","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"marion-in","name":"Marion County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Marion County","location":"Indianapolis, IN","state":"IN","lat":39.7798,"lon":-86.1390,"url":"https://broadcastify.cdnstream1.com/13928","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"allegheny-east","name":"Allegheny County Fire East","type":"fire","icon":"FD","color":"#f97316","agency":"Allegheny FD","location":"Pittsburgh, PA","state":"PA","lat":40.4406,"lon":-79.7801,"url":"https://broadcastify.cdnstream1.com/7700","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"phoenix-fire","name":"Phoenix Metro Fire","type":"fire","icon":"FD","color":"#f97316","agency":"Phoenix FD","location":"Phoenix, AZ","state":"AZ","lat":33.4484,"lon":-112.0740,"url":"https://broadcastify.cdnstream1.com/1","status":"online","bitrate":"32 kbps","format":"MP3"},
+{"id":"fairfax","name":"Fairfax County Police/Fire/EMS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Fairfax County","location":"Fairfax, VA","state":"VA","lat":38.8462,"lon":-77.3064,"url":"https://broadcastify.cdnstream1.com/28326","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"baltimore","name":"Baltimore County Municipal PD","type":"police","icon":"PD","color":"#ef4444","agency":"Baltimore County","location":"Baltimore, MD","state":"MD","lat":39.2904,"lon":-76.6122,"url":"https://broadcastify.cdnstream1.com/31110","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"des-moines","name":"Des Moines Police Dispatch","type":"police","icon":"PD","color":"#ef4444","agency":"Des Moines PD","location":"Des Moines, IA","state":"IA","lat":41.5868,"lon":-93.6250,"url":"https://broadcastify.cdnstream1.com/5725","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"rivercom","name":"Rivercom Chelan/Douglas Dispatch","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Rivercom","location":"Wenatchee, WA","state":"WA","lat":47.4453,"lon":-120.3113,"url":"https://broadcastify.cdnstream1.com/24557","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"tillamook","name":"Tillamook County Police/EMS","type":"ems","icon":"EMS","color":"#22c55e","agency":"Tillamook County","location":"Tillamook, OR","state":"OR","lat":45.4596,"lon":-123.8365,"url":"https://broadcastify.cdnstream1.com/16984","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"east-rutherford","name":"East Rutherford Police/Fire","type":"fire","icon":"FD","color":"#f97316","agency":"East Rutherford FD","location":"East Rutherford, NJ","state":"NJ","lat":40.8265,"lon":-74.0970,"url":"https://broadcastify.cdnstream1.com/19129","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"san-antonio","name":"San Antonio Police/Fire","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"San Antonio PS","location":"San Antonio, TX","state":"TX","lat":29.4241,"lon":-98.4936,"url":"https://broadcastify.cdnstream1.com/13814","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"bay-county","name":"Bay County Scanner","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Bay County","location":"Panama City, FL","state":"FL","lat":30.1588,"lon":-85.6602,"url":"http://feeds.baycountyscanner.org:8010/scanner","status":"online","bitrate":"56 kbps","format":"MP3"},
+{"id":"orlando-fire","name":"Orange County/Orlando Fire/EMS","type":"fire","icon":"FD","color":"#f97316","agency":"Orlando Fire","location":"Orlando, FL","state":"FL","lat":28.5383,"lon":-81.3792,"url":"https://broadcastify.cdnstream1.com/41064","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"sarasota","name":"Sarasota County Sheriff","type":"police","icon":"PD","color":"#ef4444","agency":"Sarasota Sheriff","location":"Sarasota, FL","state":"FL","lat":27.3364,"lon":-82.5307,"url":"https://broadcastify.cdnstream1.com/30021","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"jacksonville","name":"Jacksonville Fire Rescue","type":"fire","icon":"FD","color":"#f97316","agency":"JFRD","location":"Jacksonville, FL","state":"FL","lat":30.3322,"lon":-81.6557,"url":"https://broadcastify.cdnstream1.com/41252","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"columbus","name":"Columbus Police Citywide","type":"police","icon":"PD","color":"#ef4444","agency":"Columbus PD","location":"Columbus, OH","state":"OH","lat":39.9612,"lon":-82.9988,"url":"https://broadcastify.cdnstream1.com/11208","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"madison-wi","name":"Madison County Sheriff/Fire/EMS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Madison County","location":"Anderson, IN","state":"IN","lat":40.0541,"lon":-85.6604,"url":"https://broadcastify.cdnstream1.com/24550","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"lansing","name":"Greater Lansing Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Lansing Area PS","location":"Lansing, MI","state":"MI","lat":42.7325,"lon":-84.5555,"url":"https://broadcastify.cdnstream1.com/41557","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"south-bend","name":"South Bend/St. Joe County PD/Fire/EMS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"St. Joseph County","location":"South Bend, IN","state":"IN","lat":41.6764,"lon":-86.2520,"url":"https://broadcastify.cdnstream1.com/38966","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"south-bend2","name":"South Bend Police/Fire","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"South Bend PS","location":"South Bend, IN","state":"IN","lat":41.6800,"lon":-86.2500,"url":"https://broadcastify.cdnstream1.com/3737","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"anne-arundel","name":"Anne Arundel County Fire/EMS","type":"fire","icon":"FD","color":"#f97316","agency":"AACO FD","location":"Annapolis, MD","state":"MD","lat":38.9784,"lon":-76.4922,"url":"https://broadcastify.cdnstream1.com/25680","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"richland","name":"Richland County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Richland County","location":"Columbia, SC","state":"SC","lat":34.0007,"lon":-81.0348,"url":"https://broadcastify.cdnstream1.com/5974","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"westmoreland","name":"Westmoreland County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Westmoreland County","location":"Greensburg, PA","state":"PA","lat":40.3013,"lon":-79.5389,"url":"https://broadcastify.cdnstream1.com/3737","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"mesa","name":"Mesa County/Grand Junction PS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Mesa County","location":"Grand Junction, CO","state":"CO","lat":39.0639,"lon":-108.5506,"url":"https://broadcastify.cdnstream1.com/40688","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"cumberland","name":"Cumberland County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Cumberland County","location":"Carlisle, PA","state":"PA","lat":40.2010,"lon":-77.2000,"url":"https://broadcastify.cdnstream1.com/41202","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"muskingum","name":"Muskingum County Sheriff/Fire/EMS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Muskingum County","location":"Zanesville, OH","state":"OH","lat":39.9403,"lon":-82.0132,"url":"https://broadcastify.cdnstream1.com/24798","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"kanawha","name":"Kanawha County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Kanawha County","location":"Charleston, WV","state":"WV","lat":38.3498,"lon":-81.6326,"url":"https://broadcastify.cdnstream1.com/24713","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"lake-county","name":"Lake County Police/Fire","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Lake County","location":"Painesville, OH","state":"OH","lat":41.7245,"lon":-81.2457,"url":"https://broadcastify.cdnstream1.com/34563","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"chester","name":"Chester County Fire/EMS","type":"fire","icon":"FD","color":"#f97316","agency":"Chester County FD","location":"West Chester, PA","state":"PA","lat":39.9607,"lon":-75.6055,"url":"https://broadcastify.cdnstream1.com/29343","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"outagamie","name":"Outagamie County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Outagamie County","location":"Appleton, WI","state":"WI","lat":44.2619,"lon":-88.4154,"url":"https://broadcastify.cdnstream1.com/16904","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"fayette","name":"Fayette County ICORRS Dispatch","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Fayette County","location":"Uniontown, PA","state":"PA","lat":39.8998,"lon":-79.7166,"url":"https://broadcastify.cdnstream1.com/38096","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"rockingham","name":"Rockingham County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Rockingham County","location":"Harrisonburg, VA","state":"VA","lat":38.4496,"lon":-78.8689,"url":"https://broadcastify.cdnstream1.com/35154","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"somerset","name":"Somerset County Fire/EMS","type":"fire","icon":"FD","color":"#f97316","agency":"Somerset County","location":"Somerville, NJ","state":"NJ","lat":40.5743,"lon":-74.6099,"url":"https://broadcastify.cdnstream1.com/22346","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"temiskaming","name":"Temiskaming District PS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Temiskaming","location":"Haileybury, ON","state":"ON","lat":47.4500,"lon":-79.6333,"url":"https://broadcastify.cdnstream1.com/32623","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"st-clair","name":"St. Clair County PS Simulcast","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"St. Clair County","location":"Port Huron, MI","state":"MI","lat":42.9709,"lon":-82.4249,"url":"https://broadcastify.cdnstream1.com/30088","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"itasca","name":"Itasca County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Itasca County","location":"Grand Rapids, MN","state":"MN","lat":47.2372,"lon":-93.5302,"url":"https://broadcastify.cdnstream1.com/40664","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"jackson","name":"Jackson/Hillsdale County PS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Multi-County","location":"Jackson, MI","state":"MI","lat":42.2459,"lon":-84.4014,"url":"https://broadcastify.cdnstream1.com/38250","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"isabella","name":"Isabella County Police/Fire","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Isabella County","location":"Mt. Pleasant, MI","state":"MI","lat":43.5978,"lon":-84.7675,"url":"https://broadcastify.cdnstream1.com/21385","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"terre-haute","name":"Terre Haute/Vigo County PS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Vigo County","location":"Terre Haute, IN","state":"IN","lat":39.4667,"lon":-87.4139,"url":"https://broadcastify.cdnstream1.com/25304","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"mifflin","name":"Mifflin County Fire/EMS","type":"fire","icon":"FD","color":"#f97316","agency":"Mifflin County","location":"Lewistown, PA","state":"PA","lat":40.5973,"lon":-77.5711,"url":"https://broadcastify.cdnstream1.com/45217","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"macoupin","name":"Macoupin/Montgomery County Dispatch","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Macoupin County","location":"Carlinville, IL","state":"IL","lat":39.2798,"lon":-89.8818,"url":"https://broadcastify.cdnstream1.com/26874","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"davenport","name":"Davenport/Quad Cities Metro PS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Quad Cities","location":"Davenport, IA","state":"IA","lat":41.5236,"lon":-90.5776,"url":"https://broadcastify.cdnstream1.com/28286","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"charlotte-fl","name":"Charlotte County Sheriff","type":"police","icon":"PD","color":"#ef4444","agency":"Charlotte Sheriff","location":"Punta Gorda, FL","state":"FL","lat":26.9298,"lon":-82.0454,"url":"https://broadcastify.cdnstream1.com/29594","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"manatee","name":"Manatee County Fire/EMS","type":"fire","icon":"FD","color":"#f97316","agency":"Manatee County","location":"Bradenton, FL","state":"FL","lat":27.4989,"lon":-82.5748,"url":"https://broadcastify.cdnstream1.com/26411","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"volusia","name":"Volusia County Fire/EMS","type":"fire","icon":"FD","color":"#f97316","agency":"Volusia County","location":"Daytona Beach, FL","state":"FL","lat":29.2108,"lon":-81.0228,"url":"https://broadcastify.cdnstream1.com/1709","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"polk","name":"Polk County Fire Rescue","type":"fire","icon":"FD","color":"#f97316","agency":"Polk County","location":"Lakeland, FL","state":"FL","lat":28.0395,"lon":-81.9498,"url":"https://broadcastify.cdnstream1.com/33015","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"pinellas","name":"Pinellas County Fire/EMS","type":"fire","icon":"FD","color":"#f97316","agency":"Pinellas County","location":"Clearwater, FL","state":"FL","lat":27.9659,"lon":-82.8001,"url":"https://broadcastify.cdnstream1.com/34759","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"manatee-so","name":"Manatee County Sheriff","type":"police","icon":"PD","color":"#ef4444","agency":"Manatee Sheriff","location":"Bradenton, FL","state":"FL","lat":27.4798,"lon":-82.5750,"url":"https://broadcastify.cdnstream1.com/45531","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"indian-river","name":"Indian River County Sheriff","type":"police","icon":"PD","color":"#ef4444","agency":"Indian River Sheriff","location":"Vero Beach, FL","state":"FL","lat":27.6386,"lon":-80.3973,"url":"https://broadcastify.cdnstream1.com/42146","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"osceola","name":"Osceola County Public Safety","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Osceola County","location":"Kissimmee, FL","state":"FL","lat":28.2920,"lon":-81.4076,"url":"https://broadcastify.cdnstream1.com/42102","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"sarasota-fire","name":"Sarasota County Fire","type":"fire","icon":"FD","color":"#f97316","agency":"Sarasota FD","location":"Sarasota, FL","state":"FL","lat":27.3364,"lon":-82.5307,"url":"https://broadcastify.cdnstream1.com/18152","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"gainesville","name":"Gainesville Police/Alachua Fire","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Gainesville PS","location":"Gainesville, FL","state":"FL","lat":29.6516,"lon":-82.3248,"url":"https://broadcastify.cdnstream1.com/39282","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"perth-fire","name":"Perth Fire and Rescue","type":"fire","icon":"FD","color":"#f97316","agency":"Perth FR","location":"Perth, Australia","state":"WA","lat":-31.9505,"lon":115.8605,"url":"https://stream.warsug.info/WARSUG","status":"online","bitrate":"24 kbps","format":"MP3"},
+{"id":"colton","name":"Colton Police Scanner","type":"police","icon":"PD","color":"#ef4444","agency":"Colton PD","location":"Colton, UT","state":"UT","lat":40.2505,"lon":-112.2855,"url":"http://64.77.247.181:50/stream","status":"online","bitrate":"56 kbps","format":"MP3"},
+{"id":"bradley","name":"Bradley County Sheriff/Cleveland PD","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Bradley County","location":"Cleveland, TN","state":"TN","lat":35.1595,"lon":-84.8771,"url":"https://broadcastify.cdnstream1.com/9119","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"gratiot","name":"Gratiot County Police/Fire","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Gratiot County","location":"Alma, MI","state":"MI","lat":43.3789,"lon":-84.6597,"url":"https://broadcastify.cdnstream1.com/5094","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"calumet","name":"Calumet County Fire/First Responders","type":"fire","icon":"FD","color":"#f97316","agency":"Calumet County","location":"Chilton, WI","state":"WI","lat":44.0289,"lon":-88.1629,"url":"https://broadcastify.cdnstream1.com/44207","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"centralia","name":"Centralia Police/Fire/EMS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Centralia PS","location":"Centralia, IL","state":"IL","lat":38.5250,"lon":-89.1334,"url":"https://broadcastify.cdnstream1.com/36866","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"tazewell","name":"Tazewell Sheriff/Pekin Police","type":"police","icon":"PD","color":"#ef4444","agency":"Tazewell County","location":"Pekin, IL","state":"IL","lat":40.5675,"lon":-89.6407,"url":"https://broadcastify.cdnstream1.com/44334","status":"online","bitrate":"16 kbps","format":"MP3"},
+{"id":"salem-il","name":"Salem Fire/Surrounding PD/EMS","type":"dispatch","icon":"DC","color":"#3b82f6","agency":"Marion County","location":"Salem, IL","state":"IL","lat":38.6270,"lon":-88.9456,"url":"https://broadcastify.cdnstream1.com/33915","status":"online","bitrate":"16 kbps","format":"MP3"}
+];
+let map, markers=[], audioEl, currentFeed=null, currentFilter='all';
+function init(){
+    document.getElementById('feed-count').textContent=feeds.length;
+    map=L.map('map',{center:[39.5,-95.5],zoom:4,zoomControl:false});
+    L.control.zoom({position:'bottomright'}).addTo(map);
+    window.baseLayers={
+        map:L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; CARTO; OpenStreetMap'}),
+        satellite:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri'})
+    };
+    baseLayers.map.addTo(map);
+    setLayer('map');
+    audioEl=document.getElementById('audio-player');
+    audioEl.volume=0.8;
+    audioEl.addEventListener('playing',onAudioPlay);
+    audioEl.addEventListener('pause',onAudioStop);
+    audioEl.addEventListener('error',onAudioError);
+    renderFeeds();
+    renderMarkers();
+    setupViz();
+}
+function setLayer(name){
+    document.getElementById('btn-map').classList.toggle('active',name==='map');
+    document.getElementById('btn-sat').classList.toggle('active',name==='satellite');
+    Object.values(baseLayers).forEach(l=>map.hasLayer(l)&&map.removeLayer(l));
+    baseLayers[name].addTo(map);
+}
+function renderFeeds(){
+    const list=document.getElementById('feed-list');let html='',lastState='';
+    feeds.forEach(f=>{
+        if(currentFilter!=='all'&&f.type!==currentFilter)return;
+        if(f.state!==lastState){html+='<div class="feed-group-label">'+f.state+'</div>';lastState=f.state;}
+        const isPlaying=currentFeed===f.id;
+        html+='<div class="feed-item '+(isPlaying?'playing':'')+'" data-id="'+f.id+'" onclick="playFeed(''+f.id+'')">'+
+            '<div class="feed-icon '+f.type+'">'+f.icon+'</div>'+
+            '<div class="feed-info">'+
+                '<div class="feed-name">'+f.name+'</div>'+
+                '<div class="feed-meta">'+f.location+' · '+f.bitrate+'</div>'+
+            '</div>'+
+            '<div class="feed-status '+(isPlaying?'playing':'online')+'">'+(isPlaying?'LIVE':'ONLINE')+'</div>'+
+        '</div>';
+    });
+    list.innerHTML=html;
+}
+function renderMarkers(){
+    markers.forEach(m=>map.removeLayer(m));markers=[];
+    feeds.forEach(f=>{
+        const color=f.type==='police'?'#ef4444':f.type==='fire'?'#f97316':f.type==='ems'?'#22c55e':'#3b82f6';
+        const m=L.circleMarker([f.lat,f.lon],{radius:6,fillColor:color,color:'#fff',weight:1.5,opacity:1,fillOpacity:0.85}).addTo(map);
+        m.bindPopup('<strong>'+f.name+'</strong><br><span style="color:#aaa">'+f.location+'</span><br><button onclick="playFeed(''+f.id+'')" style="margin-top:8px;padding:6px 12px;background:'+color+';border:none;border-radius:6px;color:#fff;font-weight:600;cursor:pointer;font-size:0.75rem">PLAY</button>');
+        m.on('click',()=>{showInfo(f);});
+        markers.push(m);
+    });
+}
+function playFeed(id){
+    const feed=feeds.find(f=>f.id===id);if(!feed)return;
+    if(currentFeed===id){stopAudio();return;}
+    currentFeed=id;
+    audioEl.src=feed.url;
+    audioEl.load();
+    const playPromise=audioEl.play();
+    if(playPromise&&typeof playPromise.then==='function'){
+        playPromise.then(()=>{
+            document.getElementById('now-playing').style.display='block';
+            document.getElementById('np-title').textContent=feed.name+' | '+feed.location;
+            renderFeeds();renderMarkers();
+        }).catch(e=>{
+            console.error('Playback error:',e);
+            document.getElementById('np-title').textContent='Error: click again to retry';
         });
-        let baseLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; CARTO', subdomains: 'abcd', maxZoom: 19
-        }).addTo(map);
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-        let markers = {}, currentFilter = 'all', activeFeed = null;
-        let audioPlayer = document.getElementById('audio-player');
-        let audioContext = null, analyser = null, source = null, dataArray = null;
-        let vizAnimationId = null;
-        const VIZ_BARS = 24;
-
-        // Initialize visualizer bars
-        function initVisualizer() {
-            const container = document.getElementById('viz-container');
-            container.innerHTML = '';
-            for (let i = 0; i < VIZ_BARS; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'viz-bar';
-                bar.style.height = '2px';
-                container.appendChild(bar);
-            }
+    }
+    showInfo(feed);
+}
+function stopAudio(){
+    currentFeed=null;
+    audioEl.pause();
+    audioEl.src='';
+    document.getElementById('now-playing').style.display='none';
+    document.getElementById('np-title').textContent='--';
+    renderFeeds();renderMarkers();
+}
+function onAudioPlay(){}
+function onAudioStop(){}
+function onAudioError(){
+    document.getElementById('np-title').textContent='Stream unavailable';
+}
+function setVolume(v){audioEl&&(audioEl.volume=v/100);}
+function toggleSidebar(){
+    const sb=document.getElementById('sidebar'),btn=document.getElementById('toggle-btn');
+    if(window.innerWidth<=768){
+        sb.classList.toggle('mobile-hidden');sb.classList.toggle('mobile-visible');
+    }else{
+        sb.classList.toggle('hidden');btn.classList.toggle('collapsed');
+    }
+}
+function setFilter(type){
+    currentFilter=type;
+    document.querySelectorAll('.filter-chip').forEach(c=>c.classList.toggle('active',c.dataset.filter===type));
+    renderFeeds();
+}
+function filterFeeds(){
+    const q=document.getElementById('feed-search').value.toLowerCase();
+    document.querySelectorAll('.feed-item').forEach(el=>{
+        const id=el.dataset.id;
+        const feed=feeds.find(f=>f.id===id);
+        const match=feed&&(feed.name.toLowerCase().includes(q)||feed.location.toLowerCase().includes(q)||feed.state.toLowerCase().includes(q));
+        el.style.display=match?'':'none';
+        if(el.previousElementSibling&&el.previousElementSibling.classList.contains('feed-group-label')){
+            el.previousElementSibling.style.display=match?'':'none';
         }
-
-        // Setup Web Audio API for visualizer
-        function setupAudioContext() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = 64;
-                analyser.smoothingTimeConstant = 0.8;
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
-            }
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
-            if (!source) {
-                source = audioContext.createMediaElementSource(audioPlayer);
-                source.connect(analyser);
-                analyser.connect(audioContext.destination);
-            }
+    });
+}
+function showInfo(feed){
+    document.getElementById('info-title').innerHTML='<span style="color:'+feed.color+'">'+feed.icon+'</span> '+feed.name;
+    const rows=[
+        ['Agency',feed.agency],['Location',feed.location],['State',feed.state],
+        ['Type',feed.type.toUpperCase()],['Bitrate',feed.bitrate],['Format',feed.format]
+    ];
+    document.getElementById('info-body').innerHTML=rows.map(r=>'<div class="info-row"><span class="info-label">'+r[0]+'</span><span class="info-value">'+r[1]+'</span></div>').join('')+
+    '<button class="play-btn" onclick="playFeed(''+feed.id+'')">PLAY FEED</button>';
+    document.getElementById('info-panel').classList.add('visible');
+}
+function closeInfo(){document.getElementById('info-panel').classList.remove('visible');}
+function setupViz(){
+    const c=document.getElementById('viz-container');
+    for(let i=0;i<30;i++){const b=document.createElement('div');b.className='viz-bar';b.style.height='4px';c.appendChild(b);}
+    setInterval(()=>{
+        if(audioEl&&currentFeed&&!audioEl.paused){
+            Array.from(c.children).forEach(b=>{b.style.height=Math.max(4,Math.random()*60)+'px';});
+        }else{
+            Array.from(c.children).forEach(b=>{b.style.height='4px';});
         }
-
-        // Animate visualizer bars
-        function animateVisualizer() {
-            if (!analyser || audioPlayer.paused) {
-                vizAnimationId = null;
-                return;
-            }
-            analyser.getByteFrequencyData(dataArray);
-            const bars = document.querySelectorAll('.viz-bar');
-            const step = Math.floor(dataArray.length / VIZ_BARS);
-
-            for (let i = 0; i < VIZ_BARS; i++) {
-                const value = dataArray[i * step] || 0;
-                const percent = (value / 255) * 100;
-                const height = Math.max(2, Math.min(60, percent * 0.6));
-                if (bars[i]) bars[i].style.height = height + 'px';
-            }
-            vizAnimationId = requestAnimationFrame(animateVisualizer);
-        }
-
-        // Cleanup audio nodes
-        function cleanupAudioContext() {
-            if (vizAnimationId) {
-                cancelAnimationFrame(vizAnimationId);
-                vizAnimationId = null;
-            }
-            if (source) {
-                source.disconnect();
-                source = null;
-            }
-            if (analyser) {
-                analyser.disconnect();
-                analyser = null;
-            }
-            if (audioContext) {
-                audioContext.close();
-                audioContext = null;
-            }
-            // Reset bars
-            document.querySelectorAll('.viz-bar').forEach(bar => bar.style.height = '2px');
-        }
-
-        function initMarkers() {
-            feeds.forEach(feed => {
-                const marker = L.circleMarker([feed.lat, feed.lon], {
-                    radius: 10, fillColor: feed.color, color: feed.color,
-                    weight: 2, opacity: 0.9, fillOpacity: 0.4
-                }).addTo(map);
-
-                marker.bindPopup(`
-                    <div style="min-width:200px;font-family:'Inter',sans-serif">
-                        <h3 style="margin:0 0 6px;font-size:1rem;font-weight:700">${feed.name}</h3>
-                        <p style="margin:0 0 4px;font-size:0.8rem;color:#9ca3af">${feed.agency}</p>
-                        <p style="margin:0 0 4px;font-size:0.8rem;color:#6b7280">${feed.location}</p>
-                        <p style="margin:0;font-size:0.8rem">Status: <span style="color:#22c55e;font-weight:600">ONLINE</span></p>
-                        <p style="margin:8px 0 0;font-size:0.8rem"><a href="#" onclick="playFeed('${feed.id}');return false;" style="color:#ef4444;font-weight:600;text-decoration:none">PLAY AUDIO →</a></p>
-                    </div>
-                `, { offset: [0, -10] });
-
-                marker.on('click', () => showFeedInfo(feed.id));
-                markers[feed.id] = marker;
-            });
-        }
-
-        function renderFeeds() {
-            const list = document.getElementById('feed-list');
-            const search = document.getElementById('feed-search').value.toLowerCase();
-            list.innerHTML = '';
-
-            const filtered = feeds.filter(f => {
-                const matchesSearch = f.name.toLowerCase().includes(search) ||
-                    f.location.toLowerCase().includes(search) ||
-                    f.state.toLowerCase().includes(search);
-                const matchesFilter = currentFilter === 'all' || f.type === currentFilter;
-                return matchesSearch && matchesFilter;
-            });
-
-            const groups = {};
-            filtered.forEach(f => {
-                if (!groups[f.type]) groups[f.type] = [];
-                groups[f.type].push(f);
-            });
-
-            const labels = { police: 'Police', fire: 'Fire & Rescue', ems: 'EMS', dispatch: 'Dispatch Centers' };
-
-            Object.entries(groups).forEach(([type, items]) => {
-                const label = document.createElement('div');
-                label.className = 'feed-group-label';
-                label.textContent = labels[type] || type;
-                list.appendChild(label);
-
-                items.forEach(feed => {
-                    const item = document.createElement('div');
-                    item.className = 'feed-item' + (activeFeed === feed.id ? ' playing' : '');
-                    item.onclick = () => { map.setView([feed.lat, feed.lon], 6); playFeed(feed.id); };
-
-                    item.innerHTML = `
-                        <div class="feed-icon ${feed.type}" style="background:${feed.color}20;color:${feed.color}">${feed.icon}</div>
-                        <div class="feed-info">
-                            <div class="feed-name">${feed.name}</div>
-                            <div class="feed-meta">${feed.location} / ${feed.bitrate}</div>
-                        </div>
-                        <div class="feed-status ${activeFeed === feed.id ? 'playing' : 'online'}">${activeFeed === feed.id ? 'PLAYING' : 'ONLINE'}</div>
-                    `;
-                    list.appendChild(item);
-                });
-            });
-        }
-
-        function filterFeeds() { renderFeeds(); }
-        function setFilter(filter) {
-            currentFilter = filter;
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === filter));
-            renderFeeds();
-        }
-
-        function playFeed(id) {
-            const feed = feeds.find(f => f.id === id);
-            if (!feed) return;
-
-            if (activeFeed && activeFeed !== id) {
-                audioPlayer.pause();
-                audioPlayer.src = '';
-                cleanupAudioContext();
-            }
-
-            activeFeed = id;
-            audioPlayer.src = feed.url;
-            audioPlayer.volume = 0.8;
-            audioPlayer.play().then(() => {
-                setupAudioContext();
-                if (!vizAnimationId) animateVisualizer();
-            }).catch(e => console.log('Audio play failed:', e));
-
-            document.getElementById('now-playing').style.display = 'block';
-            document.getElementById('np-title').textContent = feed.name;
-            renderFeeds();
-            showFeedInfo(id);
-        }
-
-        function stopAudio() {
-            audioPlayer.pause();
-            audioPlayer.src = '';
-            cleanupAudioContext();
-            activeFeed = null;
-            document.getElementById('now-playing').style.display = 'none';
-            renderFeeds();
-        }
-
-        function setVolume(val) {
-            audioPlayer.volume = val / 100;
-        }
-
-        function showFeedInfo(id) {
-            const feed = feeds.find(f => f.id === id);
-            if (!feed) return;
-
-            document.getElementById('info-panel').classList.add('visible');
-            document.getElementById('info-title').innerHTML = `${feed.name}`;
-            document.getElementById('info-body').innerHTML = `
-                <div class="info-row"><span class="info-label">Agency</span><span class="info-value">${feed.agency}</span></div>
-                <div class="info-row"><span class="info-label">Location</span><span class="info-value">${feed.location}</span></div>
-                <div class="info-row"><span class="info-label">State</span><span class="info-value">${feed.state}</span></div>
-                <div class="info-row"><span class="info-label">Type</span><span class="info-value">${feed.type.toUpperCase()}</span></div>
-                <div class="info-row"><span class="info-label">Coordinates</span><span class="info-value">${feed.lat}, ${feed.lon}</span></div>
-                <div class="info-row"><span class="info-label">Bitrate</span><span class="info-value">${feed.bitrate}</span></div>
-                <div class="info-row"><span class="info-label">Format</span><span class="info-value">${feed.format}</span></div>
-                <div class="info-row"><span class="info-label">Status</span><span class="info-value" style="color:var(--green)">ONLINE</span></div>
-                <button class="play-btn" onclick="playFeed('${feed.id}')">${activeFeed === feed.id ? 'Now Playing' : 'Play Live Audio'}</button>
-            `;
-        }
-
-        function closeInfo() {
-            document.getElementById('info-panel').classList.remove('visible');
-        }
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const btn = document.getElementById('toggle-btn');
-            if (window.innerWidth <= 768) {
-                if (sidebar.classList.contains('mobile-visible')) {
-                    sidebar.classList.remove('mobile-visible');
-                    sidebar.classList.add('mobile-hidden');
-                } else {
-                    sidebar.classList.remove('mobile-hidden');
-                    sidebar.classList.add('mobile-visible');
-                }
-            } else {
-                sidebar.classList.toggle('hidden');
-            }
-            btn.classList.toggle('collapsed');
-        }
-
-        function setLayer(layer) {
-            document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`btn-${layer}`).classList.add('active');
-
-            if (layer === 'satellite') {
-                map.removeLayer(baseLayer);
-                baseLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: '&copy; Esri'
-                }).addTo(map);
-            } else {
-                map.removeLayer(baseLayer);
-                baseLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; CARTO', subdomains: 'abcd', maxZoom: 19
-                }).addTo(map);
-            }
-        }
-
-        function handleResize() {
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.add('mobile-hidden');
-            } else {
-                document.getElementById('sidebar').classList.remove('mobile-hidden', 'mobile-visible');
-            }
-        }
-        window.addEventListener('resize', handleResize);
-
-        let touchStartX = 0;
-        document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
-        document.addEventListener('touchend', e => {
-            const diff = e.changedTouches[0].clientX - touchStartX;
-            const sidebar = document.getElementById('sidebar');
-            if (window.innerWidth <= 768) {
-                if (diff > 80 && touchStartX < 50) {
-                    sidebar.classList.remove('mobile-hidden');
-                    sidebar.classList.add('mobile-visible');
-                } else if (diff < -80) {
-                    sidebar.classList.remove('mobile-visible');
-                    sidebar.classList.add('mobile-hidden');
-                }
-            }
-        });
-
-        initMarkers();
-        initVisualizer();
-        renderFeeds();
-        handleResize();
-    </script>
+    },80);
+}
+window.addEventListener('resize',()=>{if(window.innerWidth>768){document.getElementById('sidebar').classList.remove('mobile-hidden','mobile-visible');}});
+document.addEventListener('DOMContentLoaded',init);
+</script>
 </body>
 </html>
